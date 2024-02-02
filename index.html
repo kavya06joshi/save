@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Personal Dashboard</title>
+
+    <!-- Prism CSS for syntax highlighting -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.25.0/themes/prism.min.css" integrity="sha512-n/Kt9IgZ9q2zI9Mx3g5/AeTXQ+U2zFE7TLMJFVg5KpbyUYtXq6iBO2sNob2tCU8Shl4eGvYF3zTTUpDPmJif4A==" crossorigin="anonymous" />
+
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 20px;
+            background-color: #f2f2f2;
+        }
+
+        h1 {
+            color: #333;
+        }
+
+        label {
+            display: block;
+            margin-top: 10px;
+            color: #555;
+        }
+
+        input, textarea {
+            width: 100%;
+            padding: 8px;
+            margin-top: 6px;
+            margin-bottom: 12px;
+            box-sizing: border-box;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 10px;
+        }
+
+        button:hover {
+            background-color: #45a049;
+        }
+
+        ul {
+            list-style-type: none;
+            padding: 0;
+        }
+
+        li {
+            margin-bottom: 10px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            background-color: #fff;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        /* Prism styling adjustments */
+        pre {
+            margin: 0;
+            white-space: pre-wrap;
+            word-break: break-all;
+            tab-size: 4;
+            -moz-tab-size: 4;
+        }
+
+        /* Styling for the modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background-color: #fefefe;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .modal-buttons {
+            margin-top: 10px;
+        }
+
+        .modal-buttons button {
+            margin-right: 10px;
+        }
+
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <h1>Welcome to My Personal Dashboard</h1>
+    
+    <label for="contentName">Content Name:</label>
+    <input type="text" id="contentName" placeholder="Enter a name for your content">
+
+    <label for="content">Content:</label>
+    <textarea id="content" placeholder="Enter your content"></textarea>
+
+    <button onclick="openModal('text')">Save</button>
+    <button onclick="sortTextByName()">Sort by Name</button>
+    <button onclick="sortTextByDate()">Sort by Date</button>
+
+    <h2>Saved Texts:</h2>
+    <ul id="textList"></ul>
+
+    <button onclick="openModal('code')">Save Code</button>
+    <button onclick="sortCodeByName()">Sort Code by Name</button>
+    <button onclick="sortCodeByDate()">Sort Code by Date</button>
+
+    <h2>Saved Codes:</h2>
+    <ul id="codeList"></ul>
+
+    <!-- Include Prism JavaScript for syntax highlighting -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.25.0/components/prism-core.min.js" integrity="sha512-2SnNCX9pJ5sOqdMZSm4KfX43C0lb+bZ95Yr5kD8q+7Z6XsrtGthnq0EKe5cNUia+2yN4kDf0yfO66fN5z/0fNQ==" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.25.0/components/prism-clike.min.js" integrity="sha512-AeQQvWcJovKQQ8ih8hNSdQBDsT/DtEnB/jMCRW8P5P5uYup5AVlU8y+j2MRssy+JzKmN/XTs/zDSYi9ssdXqmA==" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.25.0/components/prism-javascript.min.js" integrity="sha512-pi+x84Nv/ZtNNVY5FGDcBiO1DN9f9mEro3d/jrVQdm+uMWKi7dE+FT5jYZl6BxyyEFls5WEqBFhZg9+msfuPfw==" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.25.0/plugins/autoloader/prism-autoloader.min.js" integrity="sha512-jckAp4bM8cvuoLVdnUNUk8b2rtmgLOaIx5+K1blFJc28x81F0e7cVrKz4r+ok4daJxFmbnJBRp9gut8d3L1y5w==" crossorigin="anonymous"></script>
+
+    <script>
+        let currentContentType = '';
+
+        // Load saved contents on page load
+        document.addEventListener('DOMContentLoaded', function () {
+            updateTextList();
+            updateCodeList();
+        });
+
+        function openModal(contentType) {
+            currentContentType = contentType;
+            const modal = document.querySelector('.modal');
+            modal.style.display = 'flex';
+        }
+
+        function closeModal() {
+            const modal = document.querySelector('.modal');
+            modal.style.display = 'none';
+        }
+
+        function saveContent() {
+            const contentName = document.getElementById('contentName').value.trim();
+            const contentValue = document.getElementById('content').value.trim();
+
+            if (contentName && contentValue) {
+                let contentList = currentContentType === 'code' ? JSON.parse(localStorage.getItem('codeList')) || {} : JSON.parse(localStorage.getItem('textList')) || {};
+                contentList[contentName] = { content: contentValue, date: new Date().toLocaleString() };
+
+                if (currentContentType === 'code') {
+                    localStorage.setItem('codeList', JSON.stringify(contentList));
+                    updateCodeList();
+                } else {
+                    localStorage.setItem('textList', JSON.stringify(contentList));
+                    updateTextList();
+                }
+
+                // Clear input fields
+                document.getElementById('contentName').value = '';
+                document.getElementById('content').value = '';
+
+                // Close the modal after saving
+                closeModal();
+            } else {
+                alert('Please enter both content name and content value.');
+            }
+        }
+
+        function deleteContent(contentType, name) {
+            let contentList = contentType === 'code' ? JSON.parse(localStorage.getItem('codeList')) || {} : JSON.parse(localStorage.getItem('textList')) || {};
+
+            if (contentList[name]) {
+                delete contentList[name];
+
+                if (contentType === 'code') {
+                    localStorage.setItem('codeList', JSON.stringify(contentList));
+                    updateCodeList();
+                } else {
+                    localStorage.setItem('textList', JSON.stringify(contentList));
+                    updateTextList();
+                }
+            }
+        }
+
+        function viewDetails(contentType, name) {
+            const contentList = contentType === 'code' ? JSON.parse(localStorage.getItem('codeList')) || {} : JSON.parse(localStorage.getItem('textList')) || {};
+
+            if (contentList[name]) {
+                const detailsModal = document.querySelector('.details-modal');
+                const detailsContent = document.querySelector('.details-content');
+                const detailsType = document.querySelector('.details-type');
+
+                detailsType.textContent = contentType === 'code' ? 'Code Details' : 'Text Details';
+                detailsContent.innerHTML = `<b>${name}:</b><br>${contentList[name].content}<br><p><b>Date:</b> ${contentList[name].date}</p>`;
+
+                detailsModal.style.display = 'flex';
+            }
+        }
+
+        function updateTextList() {
+            const textList = JSON.parse(localStorage.getItem('textList')) || {};
+            const listElement = document.getElementById('textList');
+
+            // Clear existing list items
+            listElement.innerHTML = '';
+
+            // Populate the list with saved texts
+            for (const name in textList) {
+                const listItem = document.createElement('li');
+                listItem.innerHTML = `<b>${name}:</b> ${textList[name].content} <p><b>Date:</b> ${textList[name].date}</p>
+                                      <button onclick="viewDetails('text', '${name}')">Details</button>
+                                      <button onclick="deleteContent('text', '${name}')">Delete</button>`;
+                listElement.appendChild(listItem);
+            }
+        }
+
+        function updateCodeList() {
+            const codeList = JSON.parse(localStorage.getItem('codeList')) || {};
+            const listElement = document.getElementById('codeList');
+
+            // Clear existing list items
+            listElement.innerHTML = '';
+
+            // Populate the list with saved codes
+            for (const name in codeList) {
+                const listItem = document.createElement('li');
+                listItem.style.background = '#f0f8ff';
+                listItem.innerHTML = `<b>${name}:</b><pre><code class="language-javascript">${codeList[name].content}</code></pre> <p><b>Date:</b> ${codeList[name].date}</p>
+                                      <button onclick="viewDetails('code', '${name}')">Details</button>
+                                      <button onclick="deleteContent('code', '${name}')">Delete</button>`;
+                listElement.appendChild(listItem);
+            }
+
+            // Apply Prism syntax highlighting after updating the code list
+            Prism.highlightAll();
+        }
+
+        function sortTextByName() {
+            const textList = JSON.parse(localStorage.getItem('textList')) || {};
+            const sortedList = Object.keys(textList).sort((a, b) => a.localeCompare(b));
+            const sortedTextList = {};
+            sortedList.forEach(name => sortedTextList[name] = textList[name]);
+            localStorage.setItem('textList', JSON.stringify(sortedTextList));
+            updateTextList();
+        }
+
+        function sortTextByDate() {
+            const textList = JSON.parse(localStorage.getItem('textList')) || {};
+            const sortedList = Object.keys(textList).sort((a, b) => new Date(textList[b].date) - new Date(textList[a].date));
+            const sortedTextList = {};
+            sortedList.forEach(name => sortedTextList[name] = textList[name]);
+            localStorage.setItem('textList', JSON.stringify(sortedTextList));
+            updateTextList();
+        }
+
+        function sortCodeByName() {
+            const codeList = JSON.parse(localStorage.getItem('codeList')) || {};
+            const sortedList = Object.keys(codeList).sort((a, b) => a.localeCompare(b));
+            const sortedCodeList = {};
+            sortedList.forEach(name => sortedCodeList[name] = codeList[name]);
+            localStorage.setItem('codeList', JSON.stringify(sortedCodeList));
+            updateCodeList();
+        }
+
+        function sortCodeByDate() {
+            const codeList = JSON.parse(localStorage.getItem('codeList')) || {};
+            const sortedList = Object.keys(codeList).sort((a, b) => new Date(codeList[b].date) - new Date(codeList[a].date));
+            const sortedCodeList = {};
+            sortedList.forEach(name => sortedCodeList[name] = codeList[name]);
+            localStorage.setItem('codeList', JSON.stringify(sortedCodeList));
+            updateCodeList();
+        }
+    </script>
+
+    <!-- Modal for choosing content type -->
+    <div class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal()">&times;</span>
+            <p>Choose the content type:</p>
+            <div class="modal-buttons">
+                <button onclick="currentContentType = 'text'; saveContent()">Text</button>
+                <button onclick="currentContentType = 'code'; saveContent()">Code</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal for displaying details -->
+    <div class="details-modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeDetailsModal()">&times;</span>
+            <div class="details-type"></div>
+            <div class="details-content"></div>
+        </div>
+    </div>
+
+    <script>
+        function closeDetailsModal() {
+            const detailsModal = document.querySelector('.details-modal');
+            detailsModal.style.display = 'none';
+        }
+    </script>
+</body>
+</html>
